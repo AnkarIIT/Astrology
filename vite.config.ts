@@ -12,7 +12,19 @@ export default defineConfig(({mode}) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, 'src'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom'],
+            motion: ['motion'],
+            icons: ['lucide-react'],
+            supabase: ['@supabase/supabase-js'],
+          },
+        },
       },
     },
     server: {
