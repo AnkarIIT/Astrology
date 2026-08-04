@@ -1,32 +1,57 @@
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2, Sparkles } from "lucide-react";
 import { RASHI_NAMES } from "@/lib/astrology";
 import { api, type Horoscope } from "@/lib/data";
+import { generateHoroscope } from "@/lib/horoscope";
 
 export default function Horoscope() {
   const { t, i18n } = useTranslation();
   const isHindi = i18n.language === "hi";
   const [active, setActive] = useState(0);
-  const [data, setData] = useState<Record<number, Horoscope | undefined>>({});
   const [period, setPeriod] = useState("daily");
+  const [dbData, setDbData] = useState<Horoscope[]>([]);
+  const [text, setText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
 
   useEffect(() => {
-    api.horoscopes().then((list) => {
-      const map: Record<number, Horoscope | undefined> = {};
-      for (const h of list) {
-        if (h.period !== period) continue;
-        const idx = RASHI_NAMES.en.findIndex((r) => r.startsWith(h.rashi)) >= 0
-          ? RASHI_NAMES.en.findIndex((r) => r.startsWith(h.rashi))
-          : parseInt(h.rashi) || 0;
-        map[idx] = h;
-      }
-      setData(map);
-    });
-  }, [period]);
+    api.horoscopes().then(setDbData).catch(() => {});
+  }, []);
 
-  const current = data[active];
-  const text = current ? (isHindi ? current.text_hi : current.text_en) : null;
+  const resolve = useCallback(
+    async (rashiIdx: number, per: string) => {
+      const rashiEn = RASHI_NAMES.en[rashiIdx];
+      const rashiHi = RASHI_NAMES.hi[rashiIdx];
+
+      const db = dbData.find(
+        (h) =>
+          h.period === per &&
+          (RASHI_NAMES.en.some((r) => r.startsWith(h.rashi))
+            ? RASHI_NAMES.en.findIndex((r) => r.startsWith(h.rashi)) === rashiIdx
+            : parseInt(h.rashi) === rashiIdx)
+      );
+      if (db) {
+        setText(isHindi ? db.text_hi : db.text_en);
+        return;
+      }
+
+      setText(null);
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      setLoading(true);
+      const gen = await generateHoroscope(rashiEn, rashiHi, per, isHindi ? "hi" : "en");
+      loadingRef.current = false;
+      setLoading(false);
+      if (gen) setText(gen);
+    },
+    [dbData, isHindi]
+  );
+
+  useEffect(() => {
+    resolve(active, period);
+  }, [active, period, resolve]);
 
   return (
     <section className="pt-32 pb-24 px-4">
@@ -73,7 +98,7 @@ export default function Horoscope() {
         </div>
 
         <motion.div
-          key={active}
+          key={active + period}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass rounded-3xl p-8 md:p-10 text-center"
@@ -81,13 +106,19 @@ export default function Horoscope() {
           <h2 className="text-3xl font-serif font-bold text-gold-300 mb-6">
             {RASHI_NAMES[isHindi ? "hi" : "en"][active]}
           </h2>
-          <p className="text-slate-300 text-lg leading-relaxed">
-            {text ?? (
-              <span className="text-slate-500 italic">
-                {t("horoscope.generated")} — {new Date().toLocaleDateString()}
-              </span>
-            )}
-          </p>
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin text-gold-400" />
+              {t("horoscope.generating")}
+            </div>
+          ) : text ? (
+            <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-line">{text}</p>
+          ) : (
+            <p className="text-slate-500 italic flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              {t("horoscope.generated")} — {new Date().toLocaleDateString()}
+            </p>
+          )}
         </motion.div>
       </div>
     </section>

@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+# Update with your real domain
+Sitemap: https://CELESTIALINSIGHTS_DOMAIN.com/sitemap.xml

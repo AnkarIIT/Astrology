@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CelestialBackground from "./CelestialBackground";
+import WhatsAppButton from "./WhatsAppButton";
+import Seo from "./Seo";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -23,6 +25,8 @@ export default function Layout() {
         </main>
         <Footer />
       </div>
+      <Seo />
+      <WhatsAppButton />
     </div>
   );
 }
