@@ -144,6 +144,11 @@ create policy "admin update" on public.services for update using (auth.role() = 
 drop policy if exists "admin delete" on public.services;
 create policy "admin delete" on public.services for delete using (auth.role() = 'authenticated');
 
+-- Admin (authenticated) can read all records including unpublished/drafts
+drop policy if exists "blog admin read" on public.blog_posts;
+create policy "blog admin read" on public.blog_posts
+  for select using (auth.role() = 'authenticated');
+
 drop policy if exists "admin insert" on public.blog_posts;
 create policy "admin insert" on public.blog_posts for insert with check (auth.role() = 'authenticated');
 drop policy if exists "admin update" on public.blog_posts;
@@ -189,6 +194,30 @@ create policy "contact admin read" on public.contact_messages for select using (
 
 drop policy if exists "horoscopes admin write" on public.horoscopes;
 create policy "horoscopes admin write" on public.horoscopes for insert with check (auth.role() = 'authenticated');
+
+-- ============================================================
+-- STORAGE: run this AFTER creating a public bucket named "media"
+-- (Dashboard > Storage > New bucket > "media" > Public)
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('media', 'media', true)
+on conflict (id) do nothing;
+
+drop policy if exists "media public read" on storage.objects;
+create policy "media public read" on storage.objects
+  for select using (bucket_id = 'media');
+
+drop policy if exists "media auth insert" on storage.objects;
+create policy "media auth insert" on storage.objects
+  for insert with check (bucket_id = 'media' and auth.role() = 'authenticated');
+
+drop policy if exists "media auth delete" on storage.objects;
+create policy "media auth delete" on storage.objects
+  for delete using (bucket_id = 'media' and auth.role() = 'authenticated');
+
+drop policy if exists "media auth update" on storage.objects;
+create policy "media auth update" on storage.objects
+  for update using (bucket_id = 'media' and auth.role() = 'authenticated');
 
 -- Seed services
 insert into public.services (title_en, title_hi, description_en, description_hi, price, duration_minutes, icon, order_index) values

@@ -77,6 +77,24 @@ export interface Horoscope {
   for_date: string;
 }
 
+export interface KundliLead {
+  id: string;
+  name: string | null;
+  dob: string;
+  tob: string | null;
+  pob: string | null;
+  result: unknown;
+  created_at: string;
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string | null;
+  message: string;
+  created_at: string;
+}
+
 async function from<T>(
   table: string,
   fallback: T[]
@@ -182,6 +200,112 @@ export const api = {
     if (!isSupabaseConfigured()) return;
     const { error } = await getSupabase().from("contact_messages").insert(input);
     if (error) console.error("Failed to save contact message:", error.message);
+  },
+
+  adminServices: async (): Promise<Service[]> => {
+    const { data, error } = await getSupabase()
+      .from("services")
+      .select("*")
+      .order("order_index");
+    if (error) throw new Error(error.message);
+    return (data as Service[]) || [];
+  },
+
+  upsertService: async (input: Partial<Service> & { id?: string }): Promise<void> => {
+    const sb = getSupabase();
+    const { error } = input.id
+      ? await sb.from("services").update(input).eq("id", input.id)
+      : await sb.from("services").insert(input);
+    if (error) throw new Error(error.message);
+  },
+
+  deleteService: async (id: string): Promise<void> => {
+    const { error } = await getSupabase().from("services").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+
+  adminBlog: async (): Promise<BlogPost[]> => {
+    const { data, error } = await getSupabase()
+      .from("blog_posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data as BlogPost[]) || [];
+  },
+
+  upsertBlog: async (input: Partial<BlogPost> & { id?: string }): Promise<void> => {
+    const sb = getSupabase();
+    const { error } = input.id
+      ? await sb.from("blog_posts").update(input).eq("id", input.id)
+      : await sb.from("blog_posts").insert(input);
+    if (error) throw new Error(error.message);
+  },
+
+  deleteBlog: async (id: string): Promise<void> => {
+    const { error } = await getSupabase().from("blog_posts").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+
+  adminGallery: async (): Promise<GalleryItem[]> => {
+    const { data, error } = await getSupabase()
+      .from("gallery_items")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data as GalleryItem[]) || [];
+  },
+
+  upsertGallery: async (input: Partial<GalleryItem> & { id?: string }): Promise<void> => {
+    const sb = getSupabase();
+    const { error } = input.id
+      ? await sb.from("gallery_items").update(input).eq("id", input.id)
+      : await sb.from("gallery_items").insert(input);
+    if (error) throw new Error(error.message);
+  },
+
+  deleteGallery: async (id: string): Promise<void> => {
+    const { error } = await getSupabase().from("gallery_items").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+
+  adminTestimonials: async (): Promise<Testimonial[]> => {
+    const { data, error } = await getSupabase()
+      .from("testimonials")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data as Testimonial[]) || [];
+  },
+
+  upsertTestimonial: async (input: Partial<Testimonial> & { id?: string }): Promise<void> => {
+    const sb = getSupabase();
+    const { error } = input.id
+      ? await sb.from("testimonials").update(input).eq("id", input.id)
+      : await sb.from("testimonials").insert(input);
+    if (error) throw new Error(error.message);
+  },
+
+  deleteTestimonial: async (id: string): Promise<void> => {
+    const { error } = await getSupabase().from("testimonials").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+
+  kundliLeads: async (): Promise<KundliLead[]> => {
+    const { data, error } = await getSupabase()
+      .from("kundli_logs")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data as KundliLead[]) || [];
+  },
+
+  contactMessages: async (): Promise<ContactMessage[]> => {
+    const { data, error } = await getSupabase()
+      .from("contact_messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data as ContactMessage[]) || [];
   },
 };
 
